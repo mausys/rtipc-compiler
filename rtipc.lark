@@ -1,8 +1,8 @@
-start: _item* 
+start: _item*
 
 _item: union
      | struct
-     | message
+		 | message
 
 
 ?union: "union" name "{" fields "}"
@@ -10,19 +10,19 @@ _item: union
 ?message: "message" name "{" fields "}"
 
 
-?fields: field (("," field)*) ","?
+fields: field (("," field)*) ","?
 ?field: name ":" fieldtype
 
 ?fieldtype: | array
            | vartype
 
-?array: "[" vartype ";" int "]"
+?array: "[" vartype ";" length "]"
 
 ?vartype: primitive
-       | name
+       | type
 
 !primitive: "bool"
-	|"i8" 
+  |"i8"
 	| "u8"
 	| "i16"
 	| "u16"
@@ -34,14 +34,15 @@ _item: union
 	| "f64"
 
 
-?name: CNAME
+!name: CNAME
+!type: CNAME
 
-!int: INT
+!length: INT
 
 %import common.CNAME -> CNAME
 %import common.INT -> INT
 %import common.WS
-%import common.C_COMMENT -> C_COMMENT 
+%import common.C_COMMENT -> C_COMMENT
 %import common.CPP_COMMENT -> CPP_COMMENT
 
 %ignore WS
