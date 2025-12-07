@@ -14,6 +14,9 @@ class Primitive(Enum):
     U64 = 7
     I64 = 8
     F64 = 8
+    U128 = 9
+    I128 = 10
+    F128 = 11
 
 
 @dataclass

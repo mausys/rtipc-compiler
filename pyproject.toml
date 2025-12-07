@@ -1,0 +1,16 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "rtipc-compiler"
+authors = [{name = "Simon Maurer", email = "mail@maurer.systems"}]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dynamic = ["version", "description"]
+
+[project.urls]
+Home = "https://github.com/mausys/rtipc-compiler"
+
+[project.scripts]
+rtipcc = "rtipc.main:main"
