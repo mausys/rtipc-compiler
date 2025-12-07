@@ -8,6 +8,7 @@ authors = [{name = "Simon Maurer", email = "mail@maurer.systems"}]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 dynamic = ["version", "description"]
+dependencies = ["lark"]
 
 [project.urls]
 Home = "https://github.com/mausys/rtipc-compiler"
