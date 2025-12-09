@@ -96,42 +96,59 @@ class RtIpcTransformer(Transformer):
 
 
 class RtIpcParser:
-    def __init__(self, path):
-        self.structs = {}
-        self.messages = {}
+    def __init__(self):
+
         lark_path = Path(__file__).parent
-        parser = Lark.open(
+        self.parser = Lark.open(
             lark_path / "rtipc.lark",
             rel_to=__file__,
             parser="lalr",
             propagate_positions=True,
         )
-        tree = parser.parse(open(path).read())
-        schema = RtIpcTransformer().transform(tree)
 
-        for s in schema:
-            self.create_struct(s)
 
-    def create_field(self, field: SchemaField):
+    def create_field(self, field: SchemaField, structs: list[Struct]):
         if isinstance(field.type.type, str):
-            type = self.structs.get(field.type.type)
+            type = structs.get(field.type.type)
             if type is None:
                 raise StructNotFound(field.type.type, field.meta.line)
             return Field(field.name, type, field.type.length)
         else:
             return Field(field.name, field.type.type, field.type.length)
 
-    def create_struct(self, struct: SchemaStruct):
+
+    def create_fields(self, schema_struct: SchemaStruct, structs: list[Struct]) -> list[Field]:
         fields = []
 
-        for field in struct.fields:
-            fields.append(self.create_field(field))
+        for schema_field in schema_struct.fields:
+            if isinstance(schema_field.type.type, str):
+                type = structs.get(schema_field.type.type)
+                if type is None:
+                    raise StructNotFound(schema_field.type.type, schema_field.meta.line)
+                field = Field(schema_field.name, type, schema_field.type.length)
+                fields.append(field)
+            else:
+                field = Field(schema_field.name, schema_field.type.type, schema_field.type.length)
+                fields.append(field)
 
-        if struct.name in self.structs:
-            raise StructAlreadyDefined(struct.name, struct.meta.line)
-        if struct.type == StructType.MESSAGE:
-            self.messages[struct.name] = Message(struct.name, fields)
-        else:
-            self.structs[struct.name] = Struct(
-                struct.name, struct.type == StructType.UNION, fields
-            )
+        return fields
+
+
+
+    def parse(self, file) -> list[Message]:
+        tree = self.parser.parse(file.read())
+        schema = RtIpcTransformer().transform(tree)
+        structs = {}
+        messages = []
+
+        for schema_struct in schema:
+            fields = self.create_fields(schema_struct, structs)
+            if schema_struct.name in structs:
+                raise StructAlreadyDefined(schema_struct.name, schema_struct.meta.line)
+            if schema_struct.type == StructType.MESSAGE:
+                messages.append(Message(schema_struct.name, fields, ''))
+            else:
+                structs[schema_struct.name] = Struct(
+                    schema_struct.name, schema_struct.type == StructType.UNION, fields
+                )
+        return messages
