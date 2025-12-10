@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, FileType
 from parser import RtIpcParser
-from info import create_info
+from info import create_info, dump_info
 
 def main():
     langs = ['c', 'rust', 'cpp']
@@ -18,6 +18,7 @@ def main():
     parser = RtIpcParser()
     messages = parser.parse(ns.schema)
     info = create_info(messages[0])
+    dump_info(info)
 
     print(info)
 

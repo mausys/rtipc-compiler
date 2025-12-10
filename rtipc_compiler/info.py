@@ -3,15 +3,17 @@ from message import *
 STRUCT_END = 0x80
 
 FIELD_TYPE_MASK = 0x03
-FIELD_TYPE_PRIMITIVE = 0x00
-FIELD_TYPE_STRUCT = 0x01
-FIELD_TYPE_UNION = 0x02
+class FieldType(IntEnum):
+    PRIMITIVE = 0x00
+    STRUCT = 0x01
+    UNION = 0x02
 
 FIELD_LENGTH_MASK = 0x0C
-FIELD_LENGTH_SINGLE = 0x00
-FIELD_LENGTH_BYTE = 0x04
-FIELD_LENGTH_16 = 0x08
-FIELD_LENGTH_32 = 0x0C
+class ArrayLengthSize(IntEnum):
+    NONE = 0x00
+    ONE = 0x04
+    TWO = 0x08
+    FOUR = 0x0C
 
 
 UINT8_MAX = 0xff
@@ -20,14 +22,14 @@ UINT32_MAX = 0xffffffff
 
 def enc_length(length: int) -> (int, bytes):
     if length <= 1:
-        return (FIELD_LENGTH_SINGLE, b'')
+        return (ArrayLengthSize.NONE, b'')
     length = length - 1
     if length <= UINT8_MAX:
-        return (FIELD_LENGTH_BYTE, length.to_bytes(1, 'little'))
+        return (ArrayLengthSize.ONE, length.to_bytes(1, 'little'))
     if length <= UINT16_MAX:
-        return (FIELD_LENGTH_16, length.to_bytes(2, 'little'))
+        return (ArrayLengthSize.TWO, length.to_bytes(2, 'little'))
     if length <= UINT32_MAX:
-        return (FIELD_LENGTH_32, length.to_bytes(4, 'little'))
+        return (ArrayLengthSize.FOUR, length.to_bytes(4, 'little'))
 
 def enc_name(name: str) -> bytes:
       return len(name).to_bytes(1, 'little') + name.encode('utf-8')
@@ -42,13 +44,13 @@ def enc_field(field: Field, close_struct: bool) -> bytes:
         type |= STRUCT_END
 
     if isinstance(field.type, Primitive):
-        type |= FIELD_TYPE_PRIMITIVE
+        type |= FieldType.PRIMITIVE
         tail = field.type.to_bytes(1, 'little')
     else:
         if field.type.is_union:
-            type |= FIELD_TYPE_UNION
+            type |= FieldType.UNION
         else:
-            type |= FIELD_TYPE_STRUCT
+            type |= FieldType.STRUCT
         tail = enc_struct(field.type)
     return name + type.to_bytes(1, 'little') + length + tail
 
@@ -68,3 +70,68 @@ def create_info(message: Message) -> bytes:
       for field in message.fields:
             info += enc_field(field, False)
       return info
+
+
+def indent(n: int) -> str:
+    return ("\t" * n)
+
+
+def dec_primitive(primitive: int) -> str:
+    return str(Primitive(primitive).name)
+
+
+def dec_array_length(type: int, info: bytes) ->  (int ,bytes):
+    match (type & FIELD_LENGTH_MASK):
+        case ArrayLengthSize.NONE:
+            return (1, info)
+        case ArrayLengthSize.ONE:
+            length = info[0]
+            return (info[0], info[1:])
+        case ArrayLengthSize.TWO:
+            length = int.from_bytes(info[0:2], byteorder='little')
+            return (length, info[2:])
+        case ArrayLengthSize.FOUR:
+            length = int.from_bytes(info[0:4], byteorder='little')
+            return (length, info[4:])
+
+def dump_field(info: bytes, n_indent: int) -> (bytes, int):
+    name_length = info[0]
+    info = info[1:]
+    name = info[:name_length].decode("utf-8")
+    info = info[name_length:]
+    type = info[0]
+    info = info[1:]
+    (array_length, info) = dec_array_length(type, info)
+
+    if array_length == 1:
+        array = ""
+    else:
+        array = " [" + str(array_length) + "]"
+
+    if type & STRUCT_END:
+        n_indent = n_indent - 1
+        print(indent(n_indent) + "}")
+
+    out = indent(n_indent) + str(name) + array
+
+    match (type & FIELD_TYPE_MASK):
+        case FieldType.PRIMITIVE:
+            out += " " + dec_primitive(info[0])
+            info = info[1:]
+        case FieldType.STRUCT:
+            out += " struct {"
+            n_indent = n_indent + 1
+        case FieldType.UNION:
+            out += " union {"
+            n_indent = n_indent + 1
+
+    print(out)
+    return (info, n_indent)
+
+
+def dump_info(info: bytes):
+
+    n_indent = 0
+    while len(info) > 0:
+        (info, n_indent) = dump_field(info, n_indent)
+
