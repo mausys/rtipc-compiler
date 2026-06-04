@@ -1,13 +1,12 @@
 start: _item*
 
-_item: union
-     | struct
-		 | message
+_item: message
+
+?message: direction? (union | struct)
 
 
 ?union: "union" name "{" fields "}"
 ?struct: "struct" name "{" fields "}"
-?message: "message" name "{" fields "}"
 
 
 fields: field (("," field)*) ","?
@@ -22,16 +21,20 @@ fields: field (("," field)*) ","?
        | type
 
 !primitive: "bool"
-  |"i8"
-	| "u8"
-	| "i16"
-	| "u16"
-	| "i32"
-	| "u32"
-	| "f32"
-	| "i64"
-	| "u64"
-	| "f64"
+  | "i8"
+  | "u8"
+  | "i16"
+  | "u16"
+  | "i32"
+  | "u32"
+  | "f32"
+  | "i64"
+  | "u64"
+  | "f64"
+  
+!direction: "bi" 
+  | "c2s"
+  | "s2c"
 
 
 !name: CNAME
