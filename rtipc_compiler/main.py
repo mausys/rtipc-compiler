@@ -20,14 +20,15 @@ def main():
     argparser.add_argument(
         "-l", "--lang", choices=langs, required=True, help="output programming language"
     )
-    argparser.add_argument("schema", type=FileType("r"), help="RTIPC schema file")
     argparser.add_argument("-o", "--output", type=Path, required=True)
+    argparser.add_argument("schema", type=Path, help="RTIPC schema file")
+
     ns = argparser.parse_args()
     parser = RtIpcParser()
     structs = parser.parse(ns.schema)
 
-    gen = CGenerator(structs)
-    gen.write(ns.output)
+    gen = CGenerator()
+    gen.write(ns.output, ns.schema.stem, structs)
 
 
 if __name__ == "__main__":

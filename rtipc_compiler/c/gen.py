@@ -60,14 +60,11 @@ class COption:
 
 
 class CGenerator(object):
-    def __init__(self, structs: list[Struct]):
-        self.structs = structs
-        self.content = ""
+    def __init__(self):
         self.indent = Indent(IndentStyle.SPACES, 4)
         self.prefix = ""
         self.variableStyle = NameStyle.SNAKECASE
         self.structStyle = NameStyle.SNAKECASE
-        self.generate()
 
     def variableName(self, name: str) -> str:
         return convert_name(name, self.variableStyle)
@@ -78,14 +75,13 @@ class CGenerator(object):
     def addLine(self, line: str):
         self.content = self.content + "\n" + str(self.indent) + line
 
-    def generate(self):
+    def generate(self, structs: list[Struct]):
         self.content = file_begin
-        for struct in self.structs:
+        for struct in structs:
             self.addStruct(struct)
             self.addLine("")
             self.addLine("")
         self.content = self.content + file_end
-        print(self.content)
 
     def addField(self, field: Field):
         line = ""
@@ -125,5 +121,10 @@ class CGenerator(object):
             self.addField(field)
         self.endStruct()
 
-    def write(path: Path, name: str):
-        pass
+    def write(self, path: Path, name: str, structs: list[Struct]):
+        self.generate(structs)
+
+        file = path / (name + ".h")
+
+        file.write_text(self.content)
+

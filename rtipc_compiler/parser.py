@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from lark import Lark, Transformer, v_args
 from lark.tree import Meta
 from pathlib import Path
-from typing import TextIO
 
 from protocol import Direction, Struct, Field, Primitive
 
@@ -149,10 +148,10 @@ class RtIpcParser(object):
 
         return fields
 
-    def parse(self, file: TextIO) -> list[Struct]:
-        tree = self.parser.parse(file.read())
+    def parse(self, path: Path) -> list[Struct]:
+        content = path.read_text(encoding="utf-8")
+        tree = self.parser.parse(content)
         schema = RtIpcTransformer().transform(tree)
-        print(schema)
         structs = {}
 
         for schema_struct in schema:
