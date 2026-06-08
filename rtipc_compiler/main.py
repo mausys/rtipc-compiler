@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, FileType
 from parser import RtIpcParser
 from c.gen import CGenerator
+from rust.gen import RustGenerator
 from pathlib import Path
 
 
@@ -26,8 +27,15 @@ def main():
     ns = argparser.parse_args()
     parser = RtIpcParser()
     structs = parser.parse(ns.schema)
-
-    gen = CGenerator()
+    
+    match ns.lang:
+        case "c":
+            gen = CGenerator()
+        case "rust":
+            gen = RustGenerator()
+        case _:
+            raise RuntimeError("language " + ns.lang + " not supported")
+            
     gen.write(ns.output, ns.schema.stem, structs)
 
 
