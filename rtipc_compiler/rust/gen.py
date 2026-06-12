@@ -70,7 +70,7 @@ class RustGenerator(object):
         self.content = self.content + file_end
 
     def addField(self, field: Field):
-        line = self.variableName(field.name) + ": "
+        line = "pub " + self.variableName(field.name) + ": "
         if isinstance(field.type, Primitive):
             type = primitiveName(field.type)
         elif isinstance(field.type, Struct):
