@@ -1,1 +1,1 @@
-# rtipc-schema
+# rtipc-compiler
